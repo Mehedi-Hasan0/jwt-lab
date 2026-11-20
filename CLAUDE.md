@@ -11,7 +11,7 @@ There are two goals, with equal weight:
 1. **Understanding.** The learner can explain every concept, trade-off and attack in their own words.
 2. **Production-grade security.** The code should look like something you would ship: validated config, hardened defaults, logs without secrets, tests, and CI gates.
 
-Speed is not a goal. Never batch several steps together to go faster.
+Speed is not a goal. Never batch several steps or sub-steps together to go faster.
 
 ## Reference files
 
@@ -19,8 +19,8 @@ Exist from the start:
 
 - `docs/ROADMAP.md`: milestones, steps, and definitions of done. The source of truth for what to build next. Read the current milestone before starting any step.
 - `docs/jwt-guide.md`: the learner's JWT Self-Study Guide. "Module N" always refers to this guide.
-- `docs/PROGRESS.md`: current milestone, current step, and checklist. Update it at the end of every step.
-- `docs/learning-log.md`: the learner's answers and your feedback, one entry per step.
+- `docs/PROGRESS.md`: current milestone, current step, and checklist. Update it at the end of every step or sub-step.
+- `docs/learning-log.md`: the learner's answers and your feedback, one entry per step or sub-step.
 
 Created later, at the roadmap step named. Do not create these early, and don't treat their absence as an error before that step:
 
@@ -30,17 +30,23 @@ Created later, at the roadmap step named. Do not create these early, and don't t
 
 ## The learning loop (run it for every step)
 
-1. **Orient.** Read `docs/PROGRESS.md`. State the current milestone and step in one line.
-2. **Explain before coding.** In 10 lines or fewer, cover:
-   - what the concept is,
-   - why it matters in production,
-   - which guide module it relates to,
+**Sub-steps.** Split a roadmap step into sub-steps (for example M0.1a, M0.1b) when it holds more than one idea. Each sub-step teaches one idea the learner can see working, and runs the whole loop on its own, including its own commit. Propose the split at the start of the roadmap step; the learner can merge or split further. Record the agreed sub-steps in `docs/PROGRESS.md`.
+
+1. **Orient and map.** Read `docs/PROGRESS.md` and state the current step in one line. Then say where this piece fits in the final system: what will use it later, and what goes wrong without it.
+2. **Plan together.** Before any code, cover:
+   - what the concept is, and why it matters in production,
+   - the decisions involved and the alternatives,
+   - which guide module or RFC it relates to,
    - which files you will touch.
-3. **Build.** Make the smallest working change, with production defaults from the start.
-4. **Break.** Demonstrate the failure or attack this step defends against. Show the exact command and its output.
-5. **Prove.** Write or run tests that fail if the defence is removed. Show the test output.
-6. **Reflect.** Ask the learner 2–3 questions (why, what if, trade-off), then wait for answers. Give short, direct feedback and correct misconceptions clearly. Append the questions and answers to `docs/learning-log.md`.
-7. **Close.** Update `docs/PROGRESS.md` and propose a conventional commit message. Commit only after the learner approves. Then **stop**, and do not start the next step until the learner says "next".
+
+   Keep it short and concrete; show rather than lecture. Answer the learner's questions until it is clear.
+
+3. **Wait for `build`.** Write no code until the learner says `build`. On 🧠 steps, `build` means you hand over the spec and failing tests, and the learner writes the code.
+4. **Build.** Make the smallest working change, with production defaults from the start. Walk through the important lines.
+5. **Break.** Ask the learner to predict what will happen. Then demonstrate the failure or attack this step defends against, showing the exact command and its output, and compare it with the prediction.
+6. **Prove.** Write or run tests that fail if the defence is removed. Show the test output.
+7. **Reflect and connect.** Ask the learner 2–3 questions (why, what if, trade-off), then wait for answers. Give short, direct feedback and correct misconceptions clearly. End with one line on how this piece connects to what was built before. Record the entry in `docs/learning-log.md`: copy the learner's answers from the chat word for word, then add your feedback.
+8. **Close.** Update `docs/PROGRESS.md` and propose a conventional commit message. Commit only after the learner approves. Then **stop**, and do not start the next step or sub-step until the learner says "next".
 
 ## Step markers in ROADMAP.md
 
@@ -52,7 +58,9 @@ Created later, at the roadmap step named. Do not create these early, and don't t
 
 | Command                | Meaning                                                               |
 | ---------------------- | --------------------------------------------------------------------- |
-| `next`                 | Move to the next step                                                 |
+| `next`                 | Move to the next step or sub-step                                     |
+| `build`                | Start building the sub-step that was just planned                     |
+| `zoom out`             | Show what's built so far and how the current piece connects to it     |
 | `hint`                 | Give one hint: the smallest useful nudge                              |
 | `show me the solution` | Write the 🧠 code, then explain it line by line                       |
 | `deeper`               | Go deeper on the current concept: RFC sections, real CVEs, edge cases |
@@ -66,8 +74,11 @@ Created later, at the roadmap step named. Do not create these early, and don't t
 3. **Quarantine the vulnerable code.** `libs/vulnerable` exists only as an attack target.
    - It must never be imported from `apps/**` or `libs/auth-verify`. Enforce this with ESLint `no-restricted-imports` and a test.
    - Never weaken real code to make an attack succeed. Attacks target `libs/vulnerable`, or a check removed on a throwaway branch.
-4. **Generic client errors.** Clients get `401 {"error":"unauthorized"}` or `403 {"error":"forbidden"}`. The specific reason goes to server logs only.
-5. **Redact logs.** Logs must redact `Authorization`, `Cookie`, `Set-Cookie`, passwords, refresh tokens, and full JWTs. Log a token's `jti` and `kid`, never the token itself.
+4. **Generic client errors.** Never tell a client why authentication or authorization failed. The specific reason goes to server logs only.
+   - API endpoints: authentication failures return `401 {"error":"unauthorized"}`, and authorization failures return `403 {"error":"forbidden"}`.
+   - OAuth grant endpoints (token exchange and client credentials, M7) use the standard RFC 6749 §5.2 error codes, such as `400 {"error":"invalid_grant"}` or `401 {"error":"invalid_client"}`, with no `error_description` that reveals the cause.
+   - Input validation may return `400`, and rate limiting `429`, with generic bodies.
+5. **Redact logs.** Logs must redact `Authorization`, `Cookie`, `Set-Cookie`, passwords, refresh tokens, client secrets, and full JWTs. Log a token's `jti` and `kid`, never the token itself.
 6. **No tokens in URLs** or query strings, ever.
 7. **Hash credentials.**
    - Passwords use argon2id.
@@ -79,7 +90,7 @@ Created later, at the roadmap step named. Do not create these early, and don't t
 
 ## Tech stack
 
-These are the defaults. Change one only through an ADR.
+These are the defaults. Replacing one needs its own ADR. Adding a supporting library that isn't listed (for example `@nestjs/terminus`) doesn't, but record it with one line on why in `adr/0001-tech-stack.md`. Until that ADR exists at M0.8, note it in the session notes in `docs/PROGRESS.md`.
 
 - Node.js active LTS, TypeScript in strict mode
 - NestJS in CLI monorepo mode

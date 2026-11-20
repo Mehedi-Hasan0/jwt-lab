@@ -2,6 +2,8 @@
 
 Milestones run in order. Each step follows the learning loop in `CLAUDE.md`.
 
+A step that holds more than one idea is split into sub-steps (M0.1a, M0.1b, …), each teaching one idea. The split is agreed at the start of the step and tracked in `PROGRESS.md`.
+
 Markers: 🔨 agent builds · 🧠 learner writes · 💥 break experiment
 
 ---
@@ -19,7 +21,10 @@ Markers: 🔨 agent builds · 🧠 learner writes · 💥 break experiment
 2. 🔨 Write `docker-compose.yml` with Postgres and Redis, including healthchecks and named volumes.
 3. 🔨 Build `libs/config`: zod-validated env with typed access, and fail fast on invalid config.
    - 💥 Start a service with a required variable missing, and show the startup failure.
-4. 🔨 Build `libs/logger`: nestjs-pino with request IDs and redaction paths for `authorization`, `cookie`, `set-cookie`, `password` and `refreshToken`.
+4. 🔨 Build `libs/logger`: nestjs-pino with request IDs and redaction paths for:
+   - headers: `authorization`, `cookie`, `set-cookie`
+   - body fields: `password`, `refreshToken`, `accessToken`
+   - the snake_case OAuth fields used from M7: `refresh_token`, `access_token`, `subject_token`, `client_secret`
    - 💥 Send a request with an `Authorization` header and prove the value is redacted. Add a test for it.
 5. 🔨 Add health endpoints: `/health/live`, and `/health/ready` (checks DB and Redis). Add graceful shutdown hooks.
 6. 🔨 Set up the HTTP security baseline: helmet, a CORS allowlist from config, a JSON body size limit, and `x-powered-by` disabled.
@@ -45,7 +50,7 @@ Markers: 🔨 agent builds · 🧠 learner writes · 💥 break experiment
    - Unknown email and wrong password must return the same generic error.
    - Equalise timing by verifying against a dummy hash when the user doesn't exist.
    - 💥 Measure the response-time difference with and without the dummy hash.
-3. 🔨 Add `npm run keys:generate`. It writes an ES256 key pair to `.keys/` with a date-based `kid`. The service loads the private key from a path given in config.
+3. 🔨 Add `npm run keys:generate`. It writes an ES256 key pair to `.keys/`. The `kid` is the date plus a short random suffix (for example `2026-11-20-a1b2`), so two keys made on the same day never collide. The service loads the private key from a path given in config.
    - Write `adr/0002-key-storage.md`: dev files vs a production secrets manager, KMS, or HSM.
 4. 🔨 Expose public keys only:
    - `GET /.well-known/jwks.json` with sensible `Cache-Control`.

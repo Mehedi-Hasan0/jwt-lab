@@ -1,15 +1,19 @@
 # Progress
 
 **Current milestone:** M0 · Foundation and production baseline
-**Current step:** M0.1
+**Current step:** M0.1a
 **Branch:** m0-foundation
-**Last updated:** 2026-11-19
+**Last updated:** 2026-11-20
 
-> The agent updates this file at the end of every step: tick the step, move "Current step" forward, and add a line to Session Notes.
+> The agent updates this file at the end of every step or sub-step: tick it, move "Current step" forward, and add a line to Session Notes. Sub-steps are added under their step once the split is agreed.
 
 ## M0 · Foundation and production baseline
 
 - [ ] M0.1 Nest monorepo scaffold (apps, libs, strict TS, ESLint, Prettier)
+  - [ ] M0.1a Monorepo layout: apps and shared libs
+  - [ ] M0.1b Strict TypeScript
+  - [ ] M0.1c ESLint with type-aware rules, plus Prettier
+  - [ ] M0.1d Secrets hygiene: .gitignore, Node pin, guard test
 - [ ] M0.2 docker-compose: Postgres + Redis with healthchecks
 - [ ] M0.3 libs/config: zod validation, fail fast
 - [ ] M0.4 libs/logger: redaction + request IDs + test
@@ -114,8 +118,15 @@
 
 ## Parked questions
 
-- (Questions to come back to later)
+Open decisions from the initial docs review. Decide each one at the step named.
+
+- **M0.4** · Path-based redaction can't catch a JWT inside a log message or error. Add a second layer that scrubs JWT-shaped strings, or accept and document the gap?
+- **M0.5** · `/health/ready` must reach the DB before Prisma arrives in M1.1. Bring Prisma in early, or use plain `pg`?
+- **M1.5** · Setting `typ: at+jwt` declares the RFC 9068 profile, which makes `client_id` a required claim. Add it (and decide what the client is), or record the deviation?
+- **M3.3f** · inventory-api doesn't exist until M7.1. How do we mint an `aud: inventory-api` token for the audience-confusion attack: a second configured audience in auth-service, or a test-only signer?
+- **M6.3** · A refresh cookie with `Path=/auth/refresh` isn't sent to logout, so logout can't find the family to revoke. Widen the path to `/auth`, or move logout under `/auth/refresh`?
 
 ## Session notes
 
 - 2026-11-19 · Project set up. Next: M0.1.
+- 2026-11-20 · Reviewed the docs: fixed clear-cut inconsistencies and parked open decisions above. Learning loop updated: sub-steps, plan together, `build` gate, predict before Break. M0.1 split into M0.1a–d. Git repo initialised; remote `origin` is `github.com/Mehedi-Hasan0/jwt-lab`, so the M0.7 CI workflow can run there. Next: M0.1a.
